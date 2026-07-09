@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from textblob import TextBlob
 
 from app.services.speech_to_text import DeepgramStreamingService
 from app.services.question_detector import QuestionDetector
@@ -57,15 +58,21 @@ class MeetingSession:
         # Always push to context buffer
         self.context_manager.add_transcript(text, is_final=is_final)
 
+        # Basic sentiment analysis using TextBlob
+        sentiment_score = TextBlob(text).sentiment.polarity
+
         # Send live transcript update to frontend
         await self._send({
             "type": "transcript",
             "text": text,
             "is_final": is_final,
+            "sentiment": sentiment_score,
         })
 
         if is_final:
+            asyncio.create_task(self._translate_and_send(text))
             await self._check_for_question(text)
+            await self._check_for_action(text)
 
     async def _check_for_question(self, sentence: str):
         """Question detection with debounce to avoid duplicate triggers."""
@@ -123,6 +130,26 @@ class MeetingSession:
                     "type": "error",
                     "message": f"Failed to generate answer: {str(e)}",
                     "code": "llm_error",
+                })
+
+    async def _translate_and_send(self, text: str):
+        translation = await self.llm_service.translate_text(text, "Spanish")
+        if translation:
+            await self._send({
+                "type": "translation",
+                "original": text,
+                "translated": translation,
+            })
+
+    async def _check_for_action(self, sentence: str):
+        lower_sent = sentence.lower()
+        if any(trigger in lower_sent for trigger in ["action item", "task", "remind me"]):
+            action = await self.llm_service.extract_action_item(sentence)
+            if action:
+                logger.info(f"Action item detected: {action}")
+                await self._send({
+                    "type": "action_item",
+                    "item": action,
                 })
 
     async def run(self):

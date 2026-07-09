@@ -175,3 +175,44 @@ class LLMService:
         except Exception as e:
             logger.warning(f"LLM question classification failed: {e}")
             return None
+
+    async def extract_action_item(self, sentence: str) -> Optional[str]:
+        try:
+            response = await self._client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Extract the specific task or action item from the text. If there is no action item, respond with 'NONE'. Respond concisely with just the task.",
+                    },
+                    {"role": "user", "content": sentence},
+                ],
+                max_tokens=30,
+                temperature=0,
+            )
+            answer = response.choices[0].message.content.strip()
+            if answer.upper() == "NONE":
+                return None
+            return answer
+        except Exception as e:
+            logger.warning(f"LLM action item extraction failed: {e}")
+            return None
+
+    async def translate_text(self, text: str, target_language: str = "Spanish") -> Optional[str]:
+        try:
+            response = await self._client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"Translate the following text to {target_language}. Respond ONLY with the translated text.",
+                    },
+                    {"role": "user", "content": text},
+                ],
+                max_tokens=100,
+                temperature=0,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.warning(f"LLM translation failed: {e}")
+            return None
