@@ -12,6 +12,9 @@ export default function App() {
   const [answers, setAnswers] = useState([]); // [{ question, answer, loading, streaming, id }]
   const [error, setError] = useState(null);
   const [partialText, setPartialText] = useState("");
+  const [actionItems, setActionItems] = useState([]);
+  const [sentiment, setSentiment] = useState(0);
+  const [translations, setTranslations] = useState([]);
 
   const wsRef = useRef(null);
   const answerIdRef = useRef(0);
@@ -80,6 +83,19 @@ export default function App() {
         } else {
           setPartialText(msg.text);
         }
+        if (msg.sentiment !== undefined) {
+          setSentiment(msg.sentiment);
+        }
+        break;
+      }
+
+      case "action_item": {
+        setActionItems(prev => [...prev, msg.item]);
+        break;
+      }
+
+      case "translation": {
+        setTranslations(prev => [...prev, { original: msg.original, translated: msg.translated }]);
         break;
       }
 
@@ -165,8 +181,33 @@ export default function App() {
     setTranscriptEntries([]);
     setAnswers([]);
     setPartialText("");
+    setActionItems([]);
+    setTranslations([]);
     setError(null);
   }, [connectWebSocket]);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    try {
+      const res = await fetch("http://localhost:8000/upload-context", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Document uploaded successfully! Ingested ${data.chunks_ingested} chunks.`);
+      } else {
+        alert(`Error: ${data.detail}`);
+      }
+    } catch (err) {
+      alert("Failed to upload document.");
+    }
+  };
 
   const handleRecordingStop = useCallback(() => {
     disconnectWebSocket();
@@ -185,12 +226,19 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <div className="header-left">
+        <div className="header-left" style={{display: 'flex', alignItems: 'center'}}>
           <div className="logo">
             <span className="logo-icon">◉</span>
             <span className="logo-text">MeetMind</span>
           </div>
           <span className="logo-tagline">Real-Time AI Meeting Assistant</span>
+          <div style={{marginLeft: "30px"}}>
+             <input type="file" accept=".pdf" onChange={handleFileUpload} style={{display: 'none'}} id="pdf-upload" />
+             <label htmlFor="pdf-upload" style={{
+                 background: '#3b82f6', color: 'white', padding: '6px 12px', 
+                 borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem'
+             }}>Upload PDF (RAG Context)</label>
+          </div>
         </div>
         <div className="header-status">
           <StatusPill state={sessionState} />
@@ -222,6 +270,31 @@ export default function App() {
         </div>
 
         <div className="right-panel">
+          <div style={{display: 'flex', gap: '1rem', marginBottom: '1rem'}}>
+             <div style={{flex: 1, background: '#1e1e1e', padding: '1rem', borderRadius: '8px', border: '1px solid #333'}}>
+               <h3 style={{marginTop: 0, fontSize: '0.9rem', color: '#888', textTransform: 'uppercase'}}>Sentiment</h3>
+               <div style={{fontSize: '1.5rem', marginTop: '0.5rem'}}>
+                 {sentiment > 0.3 ? '😊 Positive' : sentiment < -0.3 ? '😠 Negative' : '😐 Neutral'}
+                 <span style={{fontSize: '1rem', marginLeft: '10px', color: '#888'}}>({sentiment.toFixed(2)})</span>
+               </div>
+             </div>
+             
+             <div style={{flex: 2, background: '#1e1e1e', padding: '1rem', borderRadius: '8px', border: '1px solid #333'}}>
+               <h3 style={{marginTop: 0, fontSize: '0.9rem', color: '#888', textTransform: 'uppercase'}}>Action Items</h3>
+               <ul style={{margin: 0, paddingLeft: '1.2rem', color: '#6ee7b7', marginTop: '0.5rem'}}>
+                 {actionItems.length === 0 && <li style={{color: '#555', listStyle: 'none', marginLeft: '-1.2rem'}}>No action items detected...</li>}
+                 {actionItems.map((item, i) => <li key={i}>{item}</li>)}
+               </ul>
+             </div>
+          </div>
+          
+          <div style={{background: '#1e1e1e', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #333'}}>
+            <h3 style={{marginTop: 0, fontSize: '0.9rem', color: '#888', textTransform: 'uppercase'}}>Live Spanish Translation</h3>
+            <div style={{color: '#93c5fd', minHeight: '1.5rem', fontSize: '1.1rem', marginTop: '0.5rem'}}>
+              {translations.length > 0 ? translations[translations.length - 1].translated : "Waiting for speech..."}
+            </div>
+          </div>
+
           <AnswerBox answers={answers} />
         </div>
       </main>
