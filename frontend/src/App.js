@@ -209,6 +209,24 @@ export default function App() {
     }
   };
 
+  const handleExportMarkdown = () => {
+    let md = "# Meeting Notes\n\n";
+    md += "## Action Items\n";
+    actionItems.forEach(item => md += `- ${item}\n`);
+    md += "\n## Transcript\n";
+    transcriptEntries.forEach(t => md += `**${t.timestamp.toLocaleTimeString()}** - ${t.text}\n`);
+    md += "\n## Q&A\n";
+    answers.forEach(a => md += `**Q:** ${a.question}\n**A:** ${a.answer}\n\n`);
+
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "meeting-notes.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleRecordingStop = useCallback(() => {
     disconnectWebSocket();
   }, [disconnectWebSocket]);
@@ -238,6 +256,13 @@ export default function App() {
                  background: '#3b82f6', color: 'white', padding: '6px 12px', 
                  borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem'
              }}>Upload PDF (RAG Context)</label>
+          </div>
+          <div style={{marginLeft: "15px"}}>
+             <button onClick={handleExportMarkdown} style={{
+                 background: 'rgba(255,255,255,0.1)', color: 'white', padding: '6px 12px', 
+                 borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', border: '1px solid rgba(255,255,255,0.2)',
+                 backdropFilter: 'blur(10px)'
+             }}>Export Notes (MD)</button>
           </div>
         </div>
         <div className="header-status">
@@ -271,7 +296,7 @@ export default function App() {
 
         <div className="right-panel">
           <div style={{display: 'flex', gap: '1rem', marginBottom: '1rem'}}>
-             <div style={{flex: 1, background: '#1e1e1e', padding: '1rem', borderRadius: '8px', border: '1px solid #333'}}>
+             <div style={{flex: 1, background: 'rgba(30,30,30,0.4)', backdropFilter: 'blur(12px)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)'}}>
                <h3 style={{marginTop: 0, fontSize: '0.9rem', color: '#888', textTransform: 'uppercase'}}>Sentiment</h3>
                <div style={{fontSize: '1.5rem', marginTop: '0.5rem'}}>
                  {sentiment > 0.3 ? '😊 Positive' : sentiment < -0.3 ? '😠 Negative' : '😐 Neutral'}
@@ -279,7 +304,7 @@ export default function App() {
                </div>
              </div>
              
-             <div style={{flex: 2, background: '#1e1e1e', padding: '1rem', borderRadius: '8px', border: '1px solid #333'}}>
+             <div style={{flex: 2, background: 'rgba(30,30,30,0.4)', backdropFilter: 'blur(12px)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)'}}>
                <h3 style={{marginTop: 0, fontSize: '0.9rem', color: '#888', textTransform: 'uppercase'}}>Action Items</h3>
                <ul style={{margin: 0, paddingLeft: '1.2rem', color: '#6ee7b7', marginTop: '0.5rem'}}>
                  {actionItems.length === 0 && <li style={{color: '#555', listStyle: 'none', marginLeft: '-1.2rem'}}>No action items detected...</li>}
@@ -288,7 +313,7 @@ export default function App() {
              </div>
           </div>
           
-          <div style={{background: '#1e1e1e', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #333'}}>
+          <div style={{background: 'rgba(30,30,30,0.4)', backdropFilter: 'blur(12px)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)'}}>
             <h3 style={{marginTop: 0, fontSize: '0.9rem', color: '#888', textTransform: 'uppercase'}}>Live Spanish Translation</h3>
             <div style={{color: '#93c5fd', minHeight: '1.5rem', fontSize: '1.1rem', marginTop: '0.5rem'}}>
               {translations.length > 0 ? translations[translations.length - 1].translated : "Waiting for speech..."}

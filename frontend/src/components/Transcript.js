@@ -51,6 +51,9 @@ export default function Transcript({ entries, partialText }) {
 }
 
 function TranscriptEntry({ entry }) {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [text, setText] = React.useState(entry.text);
+  
   const time = entry.timestamp
     ? entry.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
     : "";
@@ -58,9 +61,21 @@ function TranscriptEntry({ entry }) {
   return (
     <div className={`transcript-entry ${entry.isQuestion ? "is-question" : ""}`}>
       <span className="entry-time">{time}</span>
-      <span className="entry-text">
+      <span className="entry-text" onDoubleClick={() => setIsEditing(true)}>
         {entry.isQuestion && <span className="question-badge">Q</span>}
-        {entry.text}
+        {isEditing ? (
+          <input 
+            value={text} 
+            onChange={e => setText(e.target.value)} 
+            onBlur={() => setIsEditing(false)} 
+            onKeyDown={e => e.key === 'Enter' && setIsEditing(false)}
+            autoFocus 
+            style={{background: 'transparent', color: 'white', border: 'none', borderBottom: '1px solid #666', outline: 'none', width: '100%', font: 'inherit', padding: 0}}
+            title="Press Enter or click away to save"
+          />
+        ) : (
+          <span title="Double click to edit">{text}</span>
+        )}
       </span>
     </div>
   );
