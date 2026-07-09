@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from app.websocket import router as ws_router
 from app.services.rag_service import rag_service
+from app.db import init_db
 
 load_dotenv()
 
@@ -24,6 +25,9 @@ async def lifespan(app: FastAPI):
     missing = [k for k in required_keys if not os.getenv(k)]
     if missing:
         logger.warning(f"Missing environment variables: {missing}")
+        
+    await init_db()
+    
     yield
     logger.info("Meeting AI Assistant backend shutting down...")
 

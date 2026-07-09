@@ -50,7 +50,7 @@ class MeetingSession:
             except Exception:
                 self._closed = True
 
-    async def _handle_transcript(self, text: str, is_final: bool):
+    async def _handle_transcript(self, text: str, is_final: bool, speaker: int = 0):
         """Called by Deepgram service for every partial/final transcript."""
         if not text.strip():
             return
@@ -67,6 +67,7 @@ class MeetingSession:
             "text": text,
             "is_final": is_final,
             "sentiment": sentiment_score,
+            "speaker": speaker,
         })
 
         if is_final:
@@ -152,6 +153,31 @@ class MeetingSession:
                     "item": action,
                 })
 
+    async def _generate_summary(self):
+        transcript = self.context_manager.get_recent_transcript()
+        if len(transcript.strip()) < 20:
+            return
+
+        try:
+            response = await self.llm_service._client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant. Summarize the following meeting transcript in a few bullet points. Also list any action items clearly."},
+                    {"role": "user", "content": transcript}
+                ],
+                max_tokens=300,
+                temperature=0.5
+            )
+            summary = response.choices[0].message.content.strip()
+            
+            await self._send({"type": "summary", "text": summary})
+            
+            from app.db import save_meeting
+            await save_meeting(transcript, summary)
+            
+        except Exception as e:
+            logger.error(f"Summary generation failed: {e}")
+
     async def run(self):
         """Main session loop: receive audio chunks, feed to Deepgram."""
         try:
@@ -189,6 +215,7 @@ class MeetingSession:
                     msg = json.loads(data["text"])
                     if msg.get("type") == "stop":
                         logger.info("Client sent stop signal")
+                        await self._generate_summary()
                         break
             except WebSocketDisconnect:
                 break

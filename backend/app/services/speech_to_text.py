@@ -15,12 +15,13 @@ DEEPGRAM_URL = (
     "&interim_results=true"
     "&utterance_end_ms=1000"
     "&vad_events=true"
+    "&diarize=true"
     "&encoding=linear16"
     "&sample_rate=16000"
     "&channels=1"
 )
 
-TranscriptCallback = Callable[[str, bool], Awaitable[None]]
+TranscriptCallback = Callable[[str, bool, int], Awaitable[None]]
 
 
 class DeepgramStreamingService:
@@ -108,7 +109,12 @@ class DeepgramStreamingService:
             is_final = msg.get("is_final", False)
             speech_final = msg.get("speech_final", False)
 
-            await self._on_transcript(transcript, is_final or speech_final)
+            speaker = 0
+            words = alternatives[0].get("words", [])
+            if words and "speaker" in words[0]:
+                speaker = words[0]["speaker"]
+
+            await self._on_transcript(transcript, is_final or speech_final, speaker)
 
         elif msg_type == "UtteranceEnd":
             logger.debug("Deepgram: UtteranceEnd received")

@@ -15,6 +15,7 @@ export default function App() {
   const [actionItems, setActionItems] = useState([]);
   const [sentiment, setSentiment] = useState(0);
   const [translations, setTranslations] = useState([]);
+  const [meetingSummary, setMeetingSummary] = useState(null);
 
   const wsRef = useRef(null);
   const answerIdRef = useRef(0);
@@ -60,8 +61,14 @@ export default function App() {
   const disconnectWebSocket = useCallback(() => {
     if (wsRef.current) {
       wsRef.current.send(JSON.stringify({ type: "stop" }));
-      wsRef.current.close();
-      wsRef.current = null;
+      // We don't close immediately so we can receive the summary.
+      // Server will close the socket.
+      setTimeout(() => {
+          if (wsRef.current) {
+              wsRef.current.close();
+              wsRef.current = null;
+          }
+      }, 5000); // 5 sec timeout fallback
     }
     setSessionState("idle");
   }, []);
@@ -78,7 +85,7 @@ export default function App() {
           setPartialText("");
           setTranscriptEntries((prev) => [
             ...prev,
-            { id: Date.now(), text: msg.text, isQuestion: false, timestamp: new Date() },
+            { id: Date.now(), text: msg.text, isQuestion: false, timestamp: new Date(), speaker: msg.speaker },
           ]);
         } else {
           setPartialText(msg.text);
@@ -96,6 +103,11 @@ export default function App() {
 
       case "translation": {
         setTranslations(prev => [...prev, { original: msg.original, translated: msg.translated }]);
+        break;
+      }
+      
+      case "summary": {
+        setMeetingSummary(msg.text);
         break;
       }
 
@@ -183,6 +195,7 @@ export default function App() {
     setPartialText("");
     setActionItems([]);
     setTranslations([]);
+    setMeetingSummary(null);
     setError(null);
   }, [connectWebSocket]);
 
@@ -319,6 +332,15 @@ export default function App() {
               {translations.length > 0 ? translations[translations.length - 1].translated : "Waiting for speech..."}
             </div>
           </div>
+          
+          {meetingSummary && (
+            <div style={{background: 'rgba(30,30,30,0.4)', backdropFilter: 'blur(12px)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(168,85,247,0.3)', boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)'}}>
+              <h3 style={{marginTop: 0, fontSize: '0.9rem', color: '#a855f7', textTransform: 'uppercase'}}>Post-Meeting Summary</h3>
+              <div style={{color: '#e8eaf0', fontSize: '0.95rem', marginTop: '0.5rem', whiteSpace: 'pre-wrap'}}>
+                {meetingSummary}
+              </div>
+            </div>
+          )}
 
           <AnswerBox answers={answers} />
         </div>

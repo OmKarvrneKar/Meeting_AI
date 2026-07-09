@@ -62,6 +62,7 @@ function TranscriptEntry({ entry }) {
     <div className={`transcript-entry ${entry.isQuestion ? "is-question" : ""}`}>
       <span className="entry-time">{time}</span>
       <span className="entry-text" onDoubleClick={() => setIsEditing(true)}>
+        {entry.speaker !== undefined && <span className="speaker-badge" style={{color: '#93c5fd', marginRight: '8px', fontWeight: 'bold'}}>Speaker {entry.speaker}:</span>}
         {entry.isQuestion && <span className="question-badge">Q</span>}
         {isEditing ? (
           <input 
