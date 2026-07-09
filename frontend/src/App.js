@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Transcript from "./components/Transcript";
 import AnswerBox from "./components/AnswerBox";
 import AudioRecorder from "./components/AudioRecorder";
+import Login from "./components/Login";
 import "./App.css";
 
 const WS_URL = process.env.REACT_APP_WS_URL || "ws://localhost:8000/ws/meeting";
@@ -16,6 +17,10 @@ export default function App() {
   const [sentiment, setSentiment] = useState(0);
   const [translations, setTranslations] = useState([]);
   const [meetingSummary, setMeetingSummary] = useState(null);
+  
+  const [user, setUser] = useState(null);
+  const [wakeWords, setWakeWords] = useState("");
+  const [isFlashing, setIsFlashing] = useState(false);
 
   const wsRef = useRef(null);
   const answerIdRef = useRef(0);
@@ -87,6 +92,24 @@ export default function App() {
             ...prev,
             { id: Date.now(), text: msg.text, isQuestion: false, timestamp: new Date(), speaker: msg.speaker },
           ]);
+          
+          if (wakeWords.trim().length > 0) {
+             const words = wakeWords.split(',').map(w => w.trim().toLowerCase());
+             const lowerText = msg.text.toLowerCase();
+             if (words.some(w => lowerText.includes(w))) {
+               setIsFlashing(true);
+               try {
+                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                 const oscillator = audioCtx.createOscillator();
+                 oscillator.type = 'sine';
+                 oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+                 oscillator.connect(audioCtx.destination);
+                 oscillator.start();
+                 oscillator.stop(audioCtx.currentTime + 0.1);
+               } catch(e) {}
+               setTimeout(() => setIsFlashing(false), 1000);
+             }
+          }
         } else {
           setPartialText(msg.text);
         }
@@ -254,8 +277,12 @@ export default function App() {
     };
   }, []);
 
+  if (!user) {
+    return <Login onLogin={setUser} />;
+  }
+
   return (
-    <div className="app">
+    <div className={`app ${isFlashing ? 'flash-alert' : ''}`}>
       <header className="app-header">
         <div className="header-left" style={{display: 'flex', alignItems: 'center'}}>
           <div className="logo">
@@ -276,6 +303,19 @@ export default function App() {
                  borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', border: '1px solid rgba(255,255,255,0.2)',
                  backdropFilter: 'blur(10px)'
              }}>Export Notes (MD)</button>
+          </div>
+          <div style={{marginLeft: "15px"}}>
+             <input 
+               type="text" 
+               placeholder="Wake words (e.g. John, Project)" 
+               value={wakeWords}
+               onChange={e => setWakeWords(e.target.value)}
+               style={{
+                 background: 'rgba(255,255,255,0.05)', color: 'white', padding: '6px 12px', 
+                 borderRadius: '4px', border: '1px solid rgba(255,255,255,0.2)',
+                 backdropFilter: 'blur(10px)', outline: 'none', fontSize: '0.85rem', width: '220px'
+               }}
+             />
           </div>
         </div>
         <div className="header-status">
