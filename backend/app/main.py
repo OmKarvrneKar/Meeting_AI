@@ -1,11 +1,12 @@
 import os
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from app.websocket import router as ws_router
+from app.services.rag_service import rag_service
 
 load_dotenv()
 
@@ -52,3 +53,15 @@ async def health_check():
         "deepgram_configured": bool(os.getenv("DEEPGRAM_API_KEY")),
         "openai_configured": bool(os.getenv("OPENAI_API_KEY")),
     }
+
+
+@app.post("/upload-context")
+async def upload_context(file: UploadFile = File(...)):
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    try:
+        chunks = await rag_service.ingest_pdf(file)
+        return {"status": "success", "chunks_ingested": chunks}
+    except Exception as e:
+        logger.error(f"Error ingesting PDF: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

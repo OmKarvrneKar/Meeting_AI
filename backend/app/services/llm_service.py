@@ -3,6 +3,8 @@ import os
 from typing import AsyncGenerator, Optional
 import openai
 
+from app.services.rag_service import rag_service
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are an expert AI meeting assistant. 
@@ -46,6 +48,10 @@ class LLMService:
         Returns the answer string.
         Raises on API failure (caller should handle).
         """
+        rag_context = rag_service.retrieve_context(question)
+        if rag_context:
+            context = f"{context}\n\n[Reference Document Context]\n{rag_context}"
+            
         user_message = ANSWER_PROMPT_TEMPLATE.format(context=context)
 
         logger.info(f"Generating answer for: {question!r}")
@@ -99,6 +105,10 @@ class LLMService:
         Stream answer tokens for the given question with conversation context.
         Yields content deltas as they arrive.
         """
+        rag_context = rag_service.retrieve_context(question)
+        if rag_context:
+            context = f"{context}\n\n[Reference Document Context]\n{rag_context}"
+
         user_message = ANSWER_PROMPT_TEMPLATE.format(context=context)
 
         logger.info(f"Streaming answer for: {question!r}")
