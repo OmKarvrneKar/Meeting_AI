@@ -1,6 +1,7 @@
 import os
 import logging
 from fastapi import UploadFile
+
 from PyPDF2 import PdfReader
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
