@@ -2,9 +2,13 @@ import os
 import logging
 from fastapi import UploadFile
 
+# pyrefly: ignore [missing-import]
 from PyPDF2 import PdfReader
+# pyrefly: ignore [missing-import]
 from langchain_community.vectorstores import Chroma
+# pyrefly: ignore [missing-import]
 from langchain_openai import OpenAIEmbeddings
+# pyrefly: ignore [missing-import]
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logger = logging.getLogger(__name__)
