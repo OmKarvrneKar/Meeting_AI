@@ -20,7 +20,12 @@ export default function App() {
   
   const [user, setUser] = useState(null);
   const [wakeWords, setWakeWords] = useState("");
+  const wakeWordsRef = useRef("");
   const [isFlashing, setIsFlashing] = useState(false);
+
+  useEffect(() => {
+    wakeWordsRef.current = wakeWords;
+  }, [wakeWords]);
 
   const wsRef = useRef(null);
   const answerIdRef = useRef(0);
@@ -93,8 +98,8 @@ export default function App() {
             { id: Date.now(), text: msg.text, isQuestion: false, timestamp: new Date(), speaker: msg.speaker },
           ]);
           
-          if (wakeWords.trim().length > 0) {
-             const words = wakeWords.split(',').map(w => w.trim().toLowerCase());
+          if (wakeWordsRef.current.trim().length > 0) {
+             const words = wakeWordsRef.current.split(',').map(w => w.trim().toLowerCase());
              const lowerText = msg.text.toLowerCase();
              if (words.some(w => lowerText.includes(w))) {
                setIsFlashing(true);
