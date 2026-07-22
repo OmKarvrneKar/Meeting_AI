@@ -300,7 +300,3 @@ await send({"type": "summary", "text": summary})
 - Speak clearly and end sentences with "?"
 - Check backend logs for `Question detected` messages
 - Verify `OPENAI_API_KEY` has available credits
-
-# Meeting_AI
-
-This repository contains the source code for the Meeting AI Assistant.
