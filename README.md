@@ -268,6 +268,8 @@ async for chunk in await client.chat.completions.create(..., stream=True):
 ```
 
 ### Persist transcripts
+
+
 ```python
 # In context_manager.py, swap deque for SQLite with aiosqlite
 ```
@@ -278,7 +280,6 @@ async for chunk in await client.chat.completions.create(..., stream=True):
 summary = await llm_service.summarize(context_manager.get_recent_transcript())
 await send({"type": "summary", "text": summary})
 ```
-
 ---
 
 ## Troubleshooting
