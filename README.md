@@ -271,7 +271,7 @@ async for chunk in await client.chat.completions.create(..., stream=True):
 
 
 ```python
-# In context_manager.py, swap deque for SQLite with aiosqlite
+# In context_manager.py, swap deque for SQLite with aiosqlite ..
 ```
 
 ### Add meeting summary on stop
@@ -301,6 +301,7 @@ await send({"type": "summary", "text": summary})
 - Speak clearly and end sentences with "?"
 - Check backend logs for `Question detected` messages
 - Verify `OPENAI_API_KEY` has available credits
+
 # Meeting_AI
 
 This repository contains the source code for the Meeting AI Assistant.
