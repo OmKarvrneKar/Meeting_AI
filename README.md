@@ -304,6 +304,6 @@ await send({"type": "summary", "text": summary})
 
 # Meeting_AI
 
-This repository contains the source code for the Meeting AI Assistant.
+This repository contains the source code for the Meeting AI Assistant..
 
 *Last updated for demonstration.*
