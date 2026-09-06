@@ -1,4 +1,4 @@
-# MeetMind — Real-Time AI Meeting Assistant
+# MeetMind — Real-Time AI Meeting Assistant.
 
 A production-ready MVP that captures live audio, transcribes speech in real time using **Deepgram**, detects questions automatically, and generates instant AI answers with **OpenAI GPT-4o** — all displayed in a live React UI.
 
